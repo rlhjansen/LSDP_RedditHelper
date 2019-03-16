@@ -102,6 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+<<<<<<< HEAD
 
 # files to explicitly not push
+=======
+>>>>>>> 9e5b6de28d74e51f13591133c62b0429fbe12687
 config.py

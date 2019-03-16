@@ -1,0 +1,30 @@
+We aim to create a chatbot that can answer questions using a Reddit knowledge
+base.
+
+Step by step:
+1. Get a question from the user.
+2. Look for Reddit at relevant posts that are similar to the question given by
+the user.
+3. Gather all comments in the comment sections of relevant post.
+4. Return a response based on the most popular type of comment
+
+How now?
+1. Get a sentence from the user.
+2. Use the reddit search function to get the most relevant post, using the
+input sentence as search words.
+3. Return the most upvoted comment.
+
+How next?
+1. Distill the information a user wants to have into keywords.
+    a. This can be done using grammar parsers.
+2. Use the keywords to gather the 100 most relevant posts.
+    (This is a limit of the reddit API)
+3. Group all comments on gathered posts.
+    a. Using meta information such as subreddit or upvotes.
+    b. Using nltp
+4. Have the bot ask follow up questions to get the most relevant group.
+    a. Using words with the most divisive usage between groups.
+    b. Using nltp
+5. Return a formulated answer.
+    a. Using grammar parsers and nltp
+    b. OR most relevant comment in the group
