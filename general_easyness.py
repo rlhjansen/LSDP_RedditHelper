@@ -10,4 +10,5 @@ def lprint(iterable):
 def minput(*args):
     input((args))
 
-minput(5,2,4,8,6,5,9,1)
+if __name__ == "__main__":
+    minput(5,2,4,8,6,5,9,1)
