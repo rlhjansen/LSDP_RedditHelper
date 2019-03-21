@@ -4,10 +4,13 @@ import os
 model_name_zipped = "GoogleNews-vectors-negative300.bin.gz"
 model_name = "GoogleNews-vectors-negative300.bin"
 
+print(os.path.exists(os.path.join(os.path.curdir, model_name_zipped)))
+print(os.path.exists(os.path.join(os.path.curdir, model_name_zipped)))
+
 if not os.path.exists(os.path.join(os.path.curdir, model_name_zipped)):
     from urllib.request import urlretrieve
     # Download the file from `url` and save it locally under `file_name`:
-    download_url = "https://drive.google.com/uc?export=download&confirm=7ZiB&id=0B7XkCwpI5KDYNlNUTTlSS21pQmM"
+    download_url = "https://github.com/mmihaltz/word2vec-GoogleNews-vectors/raw/master/GoogleNews-vectors-negative300.bin.gz"
     urlretrieve(download_url, model_name_zipped)
 
 
