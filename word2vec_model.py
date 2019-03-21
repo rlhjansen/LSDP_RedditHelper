@@ -1,3 +1,7 @@
+""" download & check model data.
+
+"""
+
 
 import os
 
@@ -7,7 +11,10 @@ model_name = "GoogleNews-vectors-negative300.bin"
 if not os.path.exists(os.path.join(os.path.curdir, model_name_zipped)):
     from urllib.request import urlretrieve
     # Download the file from `url` and save it locally under `file_name`:
-    download_url = "https://drive.google.com/uc?export=download&confirm=7ZiB&id=0B7XkCwpI5KDYNlNUTTlSS21pQmM"
+    # source: http://mccormickml.com/2016/04/12/googles-pretrained-word2vec-model-in-python/
+    download_url = "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
+    # static link, testing
+    # download_url = "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
     urlretrieve(download_url, model_name_zipped)
 
 
@@ -25,4 +32,8 @@ if os.path.exists(os.path.join(os.path.curdir, model_name)):
 
     model = gensim.models.KeyedVectors.load_word2vec_format('./GoogleNews-vectors-negative300.bin', binary=True)
     # model.init_sims(replace=True)
-    print(model.word_vec('office', use_norm=False))
+    try:
+        model.word_vec('house', use_norm=False)
+        print("model works")
+    except:
+        print("rekt u maek mistoken")
