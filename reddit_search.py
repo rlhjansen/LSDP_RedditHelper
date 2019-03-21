@@ -10,13 +10,14 @@ from general_easyness import lprint, minput
 DB_FILE = "reddit_db.json"
 
 SUBREDDIT = ""
-LIMIT = 99
+LIMIT = 100
 T = "all"
 
 
 reddit = praw.Reddit(client_id=config.client_id, client_secret=config.client_secret,
                      password=config.password, user_agent=config.user_agent,
                      username=config.username)
+
 
 def search(query):
     p = {
@@ -34,7 +35,9 @@ def search(query):
 def format_comment(comment):
     content = [comment.score, comment.body, []]
     for sub_comment in comment.replies:
-        content[-1].append(format_comment(sub_comment))
+        if type(sub_comment) is not MoreComments:
+            content[-1].append(format_comment(sub_comment))
+
     return content
 
 
@@ -43,53 +46,81 @@ def format_post(post):
                post.score, post.selftext, []]
 
     for comment in post.comments:
-        if comment.stickied:
-            continue
-
-        content[-1].append(format_comment(comment))
+        if (type(comment) is not MoreComments) and not comment.stickied:
+            content[-1].append(format_comment(comment))
 
     return post.id, content
 
 
-def db_add(db, posts):
-    for post in posts:
-        key, content = format_post(post)
-        db[key] = content
-    return db
+def db_add(db, post):
+    key, content = format_post(post)
+    db[key] = content
+    return key
 
 
 def db_load(filename):
-    db = None
+    db = {}
+
     try:
         with open(filename) as f:
-            db = json.loads(f.read())
+            index = f.readline()[:-1]
+            if not index:
+                index = None
+            db = json.loads(f.readline())
+
     except IOError:
-        db = {}
-    return db
+        index = None
+
+    return db, index
 
 
-def db_store(db, filename):
+def db_store(db, filename, index=None):
     with open(filename, "w") as f:
-        f.write(json.dumps(db))
+        if index:
+            f.write(index)
+        f.write('\n' + json.dumps(db))
 
 
-if __name__ == '__main__':
+def scrape(db, after=None):
+    p = {
+        "limit" : LIMIT,
+        "t" : T
+    }
+    if after:
+        p["after"] = "t3_" + after
+
+    index = None
+    for i, post in enumerate(reddit.get("/top", params=p)):
+        if i % 10 == 0:
+            print(".", end="", flush=True)
+        index = db_add(db, post)
+    
+    return index
+
+
+def example():
+    """ Example code on how to use the functions in this program.
+    """
     db = db_load(DB_FILE)
 
     SUBREDDIT = input("hi there, whose opinion do you want to know: ")
     query = input("what do you want to ask them: ")
-    db_add(db, search(query)[:2])
+    index = None
+    for post in search(query):
+        index = db_add(db, post)
 
-    print("The size of the database is:", len(db))
+    print("The database now consists of", len(db), "posts.")
+    db_store(db, DB_FILE, index)
 
-    db_store(db, DB_FILE)
 
-    """
+if __name__ == '__main__':
+    print("Load database...", end="", flush=True)
+    db, index = db_load(DB_FILE)
+    print(" Done\t\t\tlatest post =", index)
 
-    for i in search(query)[:3]:
-        print("\t", i.title)
-        print(i.selftext)
-        print("Comment")
-        print(i.comments[0].body)
-        print()
-    """
+    while True:
+        print("Scraping", end="")
+        index = scrape(db, index)
+        print(" Saving...", end="", flush=True)
+        db_store(db, DB_FILE, index)
+        print(" Done\tLatest post =", index)

@@ -109,4 +109,9 @@ config.py
 jochem.py
 reddit_db.json
 GoogleNews-vectors-negative300.bin.gz
+<<<<<<< HEAD
 GoogleNews-vectors-negative300.bin
+=======
+requirements.txt
+requirements.txt
+>>>>>>> c8301433deb3b9768832c6fe04a4d1602033f618
