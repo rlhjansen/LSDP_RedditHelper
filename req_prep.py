@@ -34,7 +34,8 @@ if __name__ == "__main__":
             "numpy",
             "praw",
             "nltk",
-            "autocorrect"
+            "autocorrect",
+            "sklearn"
         ]
 
 write_requirements(requirements)
