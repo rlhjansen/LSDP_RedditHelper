@@ -36,8 +36,8 @@ reddit = praw.Reddit(client_id=config.client_id, client_secret=config.client_sec
 
 
 def search(query):
-    """ Return a list of posts from reddit that fit the query.\n
-        You can specify the results by adjusting the global variables:\n
+    """ Return a list of posts from reddit that fit the query.
+        You can specify the results by adjusting the global variables:
         SUBREDDIT, LIMIT and T"""
     p = {
         "q" : query,
@@ -149,12 +149,12 @@ def db_store(filename=DB_FILE):
 
 
 def vectors_load(filename=VA_FILE):
-    """ VECTORS looks like this:\n
-    [\n
-        [addition vector 0, multiplicative vector 0, postID 0],\n
-        [addition vector 1, multiplicative vector 1, postID 1],\n
+    """ VECTORS looks like this:
+    [
+        [addition vector 0, multiplicative vector 0, postID 0],
+        [addition vector 1, multiplicative vector 1, postID 1],
                                    ...
-        [addition vector n, multiplicative vector n, postID n]\n
+        [addition vector n, multiplicative vector n, postID n]
     ]
     """
 
