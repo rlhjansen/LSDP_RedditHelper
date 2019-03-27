@@ -1,42 +1,11 @@
 """ This program scrapes the top posts of reddit and puts them in a json file.
+It supports the other programs in two ways:
 
-the database (named 'DB' throughout this file) is a dictionary of postID keys
-mapped with posts:
-DB = {
-    postID_0 : post_0,
-    postID_1 : post_1,
-    ...
-    postID_last : post_last
-}
+1.  the get(postID) function returns the post description and comment bodies of
+a given postID
 
-A post is stored like this:
-[
-    title,                 # string
-    name_of_subreddit,     # string
-    upvote_ratio,          # float
-    score,                 # int
-    selftext,              # string
-    
-    [
-        comment_0,
-        comment_1,
-        ...
-        comment_last
-    ]
-]
-
-Each comment looks like this:
-[
-    score,                 # int
-    body,                  # string
-
-    [
-        subcomment_0,
-        subcomment_1,
-        ...
-        subcomment_last
-    ]
-]    
+2.  the VECTORS variable stores the additive and multiplicative vectors of the
+titles and descriptions of all posts in the database.
 """
 
 import praw
@@ -67,6 +36,9 @@ reddit = praw.Reddit(client_id=config.client_id, client_secret=config.client_sec
 
 
 def search(query):
+    """ Return a list of posts from reddit that fit the query.\n
+        You can specify the results by adjusting the global variables:\n
+        SUBREDDIT, LIMIT and T"""
     p = {
         "q" : query,
         "limit" : LIMIT,
@@ -80,6 +52,7 @@ def search(query):
 
 
 def format_comment(comment):
+    """ The function for formatting a comment so it can fit in the database """
     content = [comment.score, comment.body, []]
     for sub_comment in comment.replies:
         if type(sub_comment) is not MoreComments:
@@ -89,6 +62,7 @@ def format_comment(comment):
 
 
 def format_post(post):
+    """ The function for formatting a post so it can fit in the json file. """
     content = [post.title, post.subreddit.display_name, post.upvote_ratio,
                post.score, post.selftext, []]
 
@@ -106,6 +80,46 @@ def db_add(post):
 
 
 def db_load(filename=DB_FILE):
+    """
+    the database (named 'DB' throughout this file) is a dictionary of postID keys
+    mapped with posts:
+    DB = {
+        postID_0 : post_0,
+        postID_1 : post_1,
+        ...
+        postID_last : post_last
+    }
+
+    A post is stored like this:
+    [
+        title,                 # string
+        name_of_subreddit,     # string
+        upvote_ratio,          # float
+        score,                 # int
+        selftext,              # string
+        
+        [
+            comment_0,
+            comment_1,
+            ...
+            comment_last
+        ]
+    ]
+
+    Each comment looks like this:
+    [
+        score,                 # int
+        body,                  # string
+
+        [
+            subcomment_0,
+            subcomment_1,
+            ...
+            subcomment_last
+        ]
+    ]    
+    """
+
     DB = {}
     INDEX = None
 
@@ -131,10 +145,19 @@ def db_store(filename=DB_FILE):
             f.write(INDEX)
         f.write('\n' + json.dumps(DB))
     
-    va_store()
+    vectors_store()
 
 
-def va_load(filename=VA_FILE):
+def vectors_load(filename=VA_FILE):
+    """ VECTORS looks like this:\n
+    [\n
+        [addition vector 0, multiplicative vector 0, postID 0],\n
+        [addition vector 1, multiplicative vector 1, postID 1],\n
+                                   ...
+        [addition vector n, multiplicative vector n, postID n]\n
+    ]
+    """
+
     global VECTORS
     VECTORS = []
 
@@ -158,13 +181,13 @@ def va_load(filename=VA_FILE):
             VECTORS.append((add_vec, mul_vec, postID))
 
         print("storing...", end="", flush=True)
-        va_store(filename)
+        vectors_store(filename)
 
     print("done.")
     return VECTORS
 
 
-def va_store(filename=VA_FILE):
+def vectors_store(filename=VA_FILE):
     with open(filename, 'w') as f:
         for add_vec, mul_vec, postID in VECTORS:
             add_str, mul_str = "", ""
@@ -212,16 +235,9 @@ def get(postID):
     return out
 
 
-""" ToDo:
-Database of [[add_vec, mult_vec, postID],
-             [  ''   ,    ''   ,   ''  ],
-             [  ''   ,    ''   ,   ''  ]]   
-"""
-
-
 DB, INDEX = db_load()
 if DB:
-    VECTORS = va_load()
+    VECTORS = vectors_load()
 print()
 
 if __name__ == '__main__':
