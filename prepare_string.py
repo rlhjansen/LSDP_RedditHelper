@@ -22,9 +22,8 @@ def additive(list_of_words):
     "returns additive value of word embeddings"
     datavalue = model.word_vec(list_of_words[0])
     for word in list_of_words[1:]:
-        datavalue = wordvalue + model.word_vec(word)
+        datavalue = datavalue + model.word_vec(word)
     return datavalue
-
 
 
 def prep(datastring):
