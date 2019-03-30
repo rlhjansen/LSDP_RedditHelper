@@ -8,14 +8,14 @@ import numpy as np
 
 from general_easyness import lprint
 
-model = gensim.models.KeyedVectors.load_word2vec_format('./GoogleNews-vectors-negative300.bin', binary=True)
+model = gensim.models.KeyedVectors.load_word2vec_format('./model.bin', binary=True)
 stop_words = set(stopwords.words('english'))
 
 def multiplicative(list_of_words):
     "returns multiplicative value of word embeddings"
     datavalue = model.word_vec(list_of_words[0])
     for word in list_of_words[1:]:
-        datavalue = np.multiply(wordvalue, model.word_vec(word))
+        datavalue = np.multiply(datavalue, model.word_vec(word))
     return datavalue
 
 def additive(list_of_words):
