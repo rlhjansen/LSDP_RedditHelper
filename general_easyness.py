@@ -8,7 +8,7 @@ def lprint(iterable):
     """
     for elem in iterable:
         if type(elem) == list:
-            print("\t".join(elem))
+            print("\t".join([str(e) for e in elem]))
         else:
             print(elem)
 

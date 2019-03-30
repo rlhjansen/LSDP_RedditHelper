@@ -1,11 +1,8 @@
 
 Jochem ToDo:
-    Scrape reddit bij r/all/ top of all time, maak een algoritme dat dit 
-    blijft doen.
 
 Reitze ToDo:
-    Afstandsfunctie tussen (de vector representatie van) post en comment
-    Autocorrect
+
 
 Nodig:
 4 Posts en comments wegen op basis van afstand ten opzichte van de query

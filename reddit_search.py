@@ -97,7 +97,7 @@ def db_load(filename=DB_FILE):
         upvote_ratio,          # float
         score,                 # int
         selftext,              # string
-        
+
         [
             comment_0,
             comment_1,
@@ -117,7 +117,7 @@ def db_load(filename=DB_FILE):
             ...
             subcomment_last
         ]
-    ]    
+    ]
     """
 
     DB = {}
@@ -144,18 +144,18 @@ def db_store(filename=DB_FILE):
         if INDEX:
             f.write(INDEX)
         f.write('\n' + json.dumps(DB))
-    
+
     vectors_store()
 
 
 def vectors_load(filename=VA_FILE):
     """ VECTORS looks like this:
-    [
-        [addition vector 0, multiplicative vector 0, postID 0],
-        [addition vector 1, multiplicative vector 1, postID 1],
-                                   ...
-        [addition vector n, multiplicative vector n, postID n]
-    ]
+        [
+            [addition vector 0, multiplicative vector 0, postID 0],
+            [addition vector 1, multiplicative vector 1, postID 1],
+                                    ...
+            [addition vector n, multiplicative vector n, postID n]
+        ]
     """
 
     global VECTORS
@@ -174,9 +174,11 @@ def vectors_load(filename=VA_FILE):
     except IOError:
         print("\n\tno vector array found at", VA_FILE,
               "constructing a new one...", end="", flush=True)
-        
+
         for postID, post in DB.items():
-            arr = prep(post[0] + post[4])
+            arr = prep(post[0] + " " + post[4])
+            if arr == []:
+                continue
             add_vec, mul_vec = additive(arr), multiplicative(arr)
             VECTORS.append((add_vec, mul_vec, postID))
 
@@ -213,20 +215,20 @@ def scrape():
         if i % 10 == 0:
             print(".", end="", flush=True)
         INDEX = db_add(post)
-    
+
     return INDEX
 
 
 def get(postID):
     """ return [
-            post.text, [comment0.body, ..., comment_last.body], 
+            post.text, [comment0.body, ..., comment_last.body],
             post.score, [comment0.score, ..., comment_last.score]
         ]
     """
 
     post = DB[postID]
     out = [post[0] + post[-2], [], post[-3], []]
-    
+
     for comment in DB[postID][-1]:
         body, score = comment[1], comment[0]
         out[1].append(body)
