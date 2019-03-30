@@ -176,7 +176,9 @@ def vectors_load(filename=VA_FILE):
               "constructing a new one...", end="", flush=True)
 
         for postID, post in DB.items():
-            arr = prep(post[0] + post[4])
+            arr = prep(post[0] + " " + post[4])
+            if arr == []:
+                continue
             add_vec, mul_vec = additive(arr), multiplicative(arr)
             VECTORS.append((add_vec, mul_vec, postID))
 

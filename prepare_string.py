@@ -10,21 +10,26 @@ from general_easyness import lprint
 
 model = gensim.models.KeyedVectors.load_word2vec_format('./model.bin', binary=True)
 stop_words = set(stopwords.words('english'))
+inCharSet = "!@#$%^&*()[]{};:,./<>?\|`~-=_+\""
 
 def multiplicative(list_of_words):
     "returns multiplicative value of word embeddings"
-    datavalue = model.word_vec(list_of_words[0])
+    datavalue = get_first_word_vec(list_of_words)
     for word in list_of_words[1:]:
         datavalue = np.multiply(datavalue, model.word_vec(word))
     return datavalue
 
 def additive(list_of_words):
     "returns additive value of word embeddings"
-    datavalue = model.word_vec(list_of_words[0])
+    print(list_of_words)
+    datavalue = get_first_word_vec(list_of_words)
     for word in list_of_words[1:]:
         datavalue = datavalue + model.word_vec(word)
     return datavalue
 
+def get_first_word_vec(list_of_words):
+    datavalue = model.word_vec(list_of_words[0])
+    return datavalue
 
 def prep(datastring):
     """ prepares post or comment content for the word2vec model.
@@ -34,7 +39,11 @@ def prep(datastring):
 
     : datastring : content of a comment
     """
-    cleaned_words = ''.join(e for e in datastring if e.isalnum() or e.isspace()).lower().split(" ")
+    s = list(datastring)
+    for i, c in enumerate(s):
+        if c in inCharSet:
+            s[i] = " "
+    cleaned_words = ''.join(s).lower().split(" ")
     potential_words = [spell(elem) for elem in cleaned_words]
     return [w for w in potential_words if (w not in stop_words) and (w in model)]
 
