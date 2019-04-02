@@ -1,6 +1,1 @@
-gensim==3.7.1
-numpy==1.16.2
-praw==6.1.1
-nltk==3.4
-autocorrect
-sklearn==0.20.2
+gensim==3.7.1numpy==1.16.2praw==6.1.1nltk==3.4autocorrectsklearn

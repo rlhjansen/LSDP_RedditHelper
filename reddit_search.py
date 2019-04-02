@@ -203,7 +203,7 @@ def vectors_store(filename=VA_FILE):
 
 def scrape():
     global INDEX
-
+    sINDEX = str(INDEX)
     p = {
         "limit" : LIMIT,
         "t" : T
@@ -215,8 +215,8 @@ def scrape():
         if i % 10 == 0:
             print(".", end="", flush=True)
         INDEX = db_add(post)
-
-    return INDEX
+    done = INDEX == sINDEX
+    return INDEX, done
 
 
 def get(postID):
@@ -245,10 +245,10 @@ print()
 if __name__ == '__main__':
 
     print("Latest post =", INDEX)
-
-    while True:
+    done = False
+    while not done:
         print("Scraping", end="")
-        scrape()
+        _, done = scrape()
         print(" Saving...", end="", flush=True)
         db_store()
         print(" Done\tLatest post =", INDEX)
