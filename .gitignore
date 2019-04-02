@@ -116,3 +116,4 @@ meta.json
 model.bin
 model.txt
 reddit_db.json
+.vscode/settings.json
