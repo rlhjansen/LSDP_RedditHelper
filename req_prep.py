@@ -35,7 +35,9 @@ if __name__ == "__main__":
             "praw",
             "nltk",
             "autocorrect",
-            "sklearn"
+            "sklearn",
+            "tqdm",
+            "stopit"
         ]
 
 write_requirements(requirements)

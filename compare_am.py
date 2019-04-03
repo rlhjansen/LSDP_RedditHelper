@@ -1,10 +1,14 @@
 
 import numpy as np
 import pandas as pd
-from general_easyness import lprint
+from general_easyness import lprint, writeformat_to_vec, minput, remove_special
 from sklearn.metrics.pairwise import cosine_similarity
 from terminaltables import AsciiTable
 from operator import itemgetter
+from prepare_string import prep, additive, multiplicative
+from reddit_search import db_load
+from random import shuffle
+
 
 adata = np.array([np.array([i, i/2]) if i % 2 else np.array([i, i*2]) for i in range(6)])
 mdata = np.array([np.array([i+1, (i*6)/2]) for i in range(6)])
@@ -13,11 +17,17 @@ data = [adata, mdata, iddata]
 
 
 def load_real_vectors():
-    df = pd.read_csv("reddit_va.csv", delimiter=",", header=None, names=["adata", "mdata", "id"])
-    adata = df["adata"]
-    mdata = df["mdata"]
-    iddata = df["id"]
-    data = [adata, mdata, iddata]
+    adata = []
+    mdata = []
+    iddata = []
+    for line in open("reddit_va.csv", "r").readlines():
+        if line[-1] == "\n":
+            line = line[:-1]
+        data = line.split(";")
+        adata.append(writeformat_to_vec(data[0]))
+        mdata.append(writeformat_to_vec(data[1]))
+        iddata.append(data[2])
+    data = [np.array(adata), np.array(mdata), iddata]
     return data
 
 
@@ -25,16 +35,16 @@ def load_real_vectors():
 def load_id_database():
     titles = ["man goes fishing" if i % 2 else "man plays soccer" for i in range(6)]
     subreddit = "outdoor"
-    upvote_ratios = [10/(4/(i % 2+1) for i in range(6)]
+    upvote_ratios = [10/(4/(i % 2+1)) for i in range(6)]
     scores = [10**i for i in range(6)]
     selftexts = ["bla"+str(i) for i in range(5)] + ["i love soccer and fishing"]
     comments = [["comment"+str(i) for i in range(j+1)] for j in range(6)]
-    posts = [[titles[i], subreddit, upvote_ratios[i], scores[i], selftexts[i], comments[i] for i in range(6)]
+    posts = [[titles[i], subreddit, upvote_ratios[i], scores[i], selftexts[i], comments[i]] for i in range(6)]
     DB = {"a"+str(i) : posts[i] for i in range(6)}
     return DB
 
 POSTDATABASE = load_real_vectors()
-IDDATABASE = load_id_database()
+IDDATABASE = db_load()[0]
 
 def cosine_sym_single(wv1, wv2):
     """ wrapper function for cosine similarity
@@ -79,14 +89,6 @@ def lfunc(func, somearray):
 def find_n_max_inds(somearray, n):
     return np.argsort(-somearray)[:n]
 
-def additive(something):
-    """placeholder"""
-    return something
-
-def multiplicative(something):
-    """placeholder"""
-    return something
-
 def weightfunc(postvotes, commentvotes):
     return 1
 
@@ -100,15 +102,16 @@ def tuplelist_to_db(somelist):
 
 def best_post_additive(postembedding, n):
     newcos = makecosfunc(postembedding)
-    res = lfunc(newcos, POSTDATABASE[0])[:,0,0]
-    return itemgetter(*(find_n_max_inds(res, n).tolist()))(database[2])
+    subres = lfunc(newcos, POSTDATABASE[0])
+    res = subres[:,0,0]
+    return itemgetter(*(find_n_max_inds(res, n).tolist()))(POSTDATABASE[2])
 
 def best_post_multiplicative(postembedding, n):
     newcos = makecosfunc(postembedding)
     res = lfunc(newcos, POSTDATABASE[1])[:,0,0]
-    return itemgetter(*(find_n_max_inds(res, n).tolist()))(database[2])
+    return itemgetter(*(find_n_max_inds(res, n).tolist()))(POSTDATABASE[2])
 
-def best_comment(expected_comment_vector, cvecs, comments):
+def best_comment(expected_comment_vector, cvecs, comments, n):
     newcos = makecosfunc(expected_comment_vector)
     res = lfunc(newcos, cvecs)[:,0,0]
     return itemgetter(*(find_n_max_inds(res, n).tolist()))(comments)
@@ -120,31 +123,49 @@ def get_eligible_responses(post_comment_pairs, embeddingfunction):
     comments = []
     for pcp in post_comment_pairs:
         post = pcp[0]
-        pvec = embeddingfunction(prep(post[1]))
-        for comment in pcp[1]:
-            weights.append(weightfunc(post[0], comment[0]))
-            cvec = embeddingfunction(prep(comment[1]))
+        pvec = embeddingfunction(prep(post[1], verbose=False))
+        if not len(pcp[1]):
             pvecs.append(pvec)
-            cvecs.append(cvec)
-            comments.append(comment[1])
+            cvecs.append(embeddingfunction(prep("", verbose=False)))
+            comments.append("")
+            weights.append(1)
+
+        for comment in pcp[1]:
+            try:
+                pvecs.append(pvec)
+                weights.append(weightfunc(post[0], comment[0]))
+                cvec = embeddingfunction(prep(comment[1], verbose=False))
+                cvecs.append(cvec)
+                comments.append(remove_special(comment[1]))
+            except:
+                print(pcp)
+                raise ValueError("string index out of range")
     wvec = np.array(weights)
-    pvecs = np.array(p_vecs)
-    cvecs = np.array(c_vecs)
-    distances = difference_vector(p_vecs, c_vecs)
-    weighted_dists = np.multiply(wdistances, wvec)
-    answerdistance = np.sum(weightfunc, axis=1)
-    return c_vecs, comments, answerdistance
+    pvecs = np.array(pvecs)
+    cvecs = np.array(cvecs)
+    distances = difference_vector(pvecs, cvecs)
+    print(distances.shape, wvec.shape)
+    answerdistance = distances * wvec[:, np.newaxis]
+    # print("wvec", wvec.shape)
+    # print("distances", distances.shape)
+    # print("answer distances", answerdistance.shape)
+    return cvecs, comments, answerdistance
 
 def get_best_response(query, embeddingfunction, nposts=5):
-    prep_query = eval(embeddingfunction)(prep(query))
+    prep_query = eval(embeddingfunction)(prep(query, verbose=False))
     if embeddingfunction == "additive":
         res_ids = best_post_additive(prep_query, nposts)
     elif embeddingfunction == "multiplicative":
         res_ids = best_post_multiplicative(prep_query, nposts)
+    else:
+        raise ValueError("no valid embedding function")
+    if isinstance(res_ids, str):
+        res_ids = [res_ids]
     post_comment_pairs = get_pcp(res_ids)
     cvecs, comments, answerdistance = get_eligible_responses(post_comment_pairs, eval(embeddingfunction))
-    expected_comment_vector = eval(embeddingfunction)(prep_query) + answerdistance
-    return best_comment(expected_comment_vector, cvecs, comments)
+    expected_comment_vector = prep_query + answerdistance
+    # lprint(comments)
+    return best_comment(expected_comment_vector, cvecs, comments, nposts)
 
 def get_pcp(ids):
     pcps = []
@@ -154,9 +175,22 @@ def get_pcp(ids):
         pcps.append(pcp)
     return pcps
 
+def get_random_pcp(n):
+    ids = list(IDDATABASE.keys())
+    shuffle(ids)
+    return get_pcp(ids[:n])
 
-print(get_best_response(query, "additive", nposts=3))
+if __name__ == '__main__':
+    query = "what is the best relic in the game?"
+    query = "can you reccomend an algorithms for graph learning?"
 
-# testa = np.array([[data[0][i], data[1][i], data[2][i]] for i in range(len(data[0]))] , dtype=[('x', float), ('+', float), ('id', str)])
-# print(res.argsort()[-3:])
-# print(AsciiTable(testa).table)
+    print("resulting respons additive:\n")
+    res = get_best_response(query, "additive", nposts=1)
+    if isinstance(res, str):
+        print(res)
+    else:
+        lprint(res, extra_sep="")
+
+    print("resulting respons multiplicative:\n")
+    res = get_best_response(query, "multiplicative", nposts=2)
+    lprint(res, extra_sep="")

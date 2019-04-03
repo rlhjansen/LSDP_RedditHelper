@@ -11,11 +11,11 @@ titles and descriptions of all posts in the database.
 import praw
 import json
 from praw.models import MoreComments
-from numpy import array
+from numpy import array, array2string, fromstring
 
 # config file contains personal information and should be handled with care
 import config
-from general_easyness import lprint, minput
+from general_easyness import lprint, minput, vec_to_writeformat, writeformat_to_vec
 from prepare_string import prep, additive, multiplicative
 
 
@@ -145,7 +145,6 @@ def db_store(filename=DB_FILE):
             f.write(INDEX)
         f.write('\n' + json.dumps(DB))
 
-    vectors_store()
 
 
 def vectors_load(filename=VA_FILE):
@@ -163,42 +162,33 @@ def vectors_load(filename=VA_FILE):
 
     print("\tloading the vector array...", end="", flush=True)
     try:
-        with open(filename) as f:
-            for line in f:
-                add_vec, mul_vec, postID = line.split(",")
-
-                add_vec = array([float(n) for n in add_vec.split(' ')])
-                mul_vec = array([float(n) for n in mul_vec.split(' ')])
-                VECTORS.append((add_vec, mul_vec, postID[:-1]))
+        with open(filename, "r") as f:
+            for line in f.readlines():
+                line = line[:-1]
+                add_vec, mul_vec, postID = line.split(";")
+                add_vec = writeformat_to_vec(add_vec)
+                mul_vec = writeformat_to_vec(mul_vec)
+                VECTORS.append((add_vec, mul_vec, postID))
 
     except IOError:
         print("\n\tno vector array found at", VA_FILE,
               "constructing a new one...", end="", flush=True)
-
-        for postID, post in DB.items():
-            arr = prep(post[0] + " " + post[4])
-            if arr == []:
-                continue
-            add_vec, mul_vec = additive(arr), multiplicative(arr)
-            VECTORS.append((add_vec, mul_vec, postID))
-
-        print("storing...", end="", flush=True)
-        vectors_store(filename)
+        vector_file = open(VA_FILE, "a+")
+        try:
+            for postID, post in DB.items():
+                arr = prep(post[0] + " " + post[4])
+                if arr == []:
+                    continue
+                add_vec, mul_vec = additive(arr), multiplicative(arr)
+                add_vec, mul_vec = vec_to_writeformat(add_vec), vec_to_writeformat(mul_vec)
+                vector_file.write(add_vec + ';' + mul_vec + ';' + postID + '\n')
+        finally:
+            vector_file.close()
 
     print("done.")
     return VECTORS
 
 
-def vectors_store(filename=VA_FILE):
-    with open(filename, 'w') as f:
-        for add_vec, mul_vec, postID in VECTORS:
-            add_str, mul_str = "", ""
-
-            for i, n in enumerate(add_vec):
-                add_str += str(n) + " "
-                mul_str += str(mul_vec[i]) + " "
-
-            f.write(add_str[:-1] + ',' + mul_str[:-1] + ',' + postID + '\n')
 
 
 def scrape():
@@ -237,12 +227,12 @@ def get(postID):
     return out
 
 
-DB, INDEX = db_load()
-if DB:
-    VECTORS = vectors_load()
-print()
 
 if __name__ == '__main__':
+    DB, INDEX = db_load()
+    if DB:
+        VECTORS = vectors_load()
+    print()
 
     print("Latest post =", INDEX)
     done = False

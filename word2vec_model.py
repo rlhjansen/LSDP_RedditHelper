@@ -19,7 +19,8 @@ if os.path.exists(os.path.join(os.path.curdir, model_name)):
     # lprint(model.vocab)
     for word in checkwords:
         try:
-            model.word_vec(word, use_norm=False)
+            vec = model.word_vec(word, use_norm=False)
+            print(vec[0])
             print(word + " works")
         except:
             print("rekt" + word + "u maek mistoken")
