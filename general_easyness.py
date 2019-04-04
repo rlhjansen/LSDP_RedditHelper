@@ -29,7 +29,7 @@ def writeformat_to_vec(string_vector):
 def remove_special(string):
     l = list(string)
     for i in range(len(l)):
-        if l[i] in inCharSet:
+        if not l[i].isalnum():
             l[i] = " "
     return "".join(l)
 

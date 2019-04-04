@@ -25,7 +25,7 @@ def get_baseline(n):
         a_mul = get_best_response(question, "multiplicative", nposts=1)
         combined = [question, best_answer, a_add, a_mul, str(int(best_answer==a_add)), str(int(best_answer==a_mul)),"","","",""]
         qap.append(",".join(combined))
-    reddit_qa = "reddit_qa.csv"
+    reddit_qa = "allreddit_qa.csv"
     f = open(reddit_qa, "w+")
     for pair in qap:
         f.write(pair+"\n")
@@ -38,19 +38,19 @@ def get_answers_queryfile(filename):
     output for us to judge is in our_qa.csv
     """
     f = open(filename, "r")
-    w = open("our_qa.csv", "w+")
+    w = open("allour_qa.csv", "w+")
     w.write("Questions,Chosen Answer Additive, Chosen Answer multiplicative, reitze score additive,reitze score multiplicative,jochem score additive, jochem score multiplicative\n")
     for line in f.readlines():
         if line[-1] == "\n":
             line = line[:-1]
         question  = remove_special(line)
-        a_add = get_best_response(question, "additive", nposts=1)
-        a_mul = get_best_response(question, "multiplicative", nposts=1)
+        a_add = get_best_response(question, "additive", nposts=10)
+        a_mul = get_best_response(question, "multiplicative", nposts=10)
         combined = [question, a_add, a_mul, "","","",""]
         w.write(",".join(combined)+"\n")
     f.close()
     w.close()
 
 filename = "our_questions.txt"
-get_answers_queryfile(filename)
+#get_answers_queryfile(filename)
 get_baseline(100)

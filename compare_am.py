@@ -10,17 +10,13 @@ from reddit_search import db_load
 from random import shuffle
 
 
-adata = np.array([np.array([i, i/2]) if i % 2 else np.array([i, i*2]) for i in range(6)])
-mdata = np.array([np.array([i+1, (i*6)/2]) for i in range(6)])
-iddata = ["a"+str(i) for i in range(6)]
-data = [adata, mdata, iddata]
 
 
 def load_real_vectors():
     adata = []
     mdata = []
     iddata = []
-    for line in open("reddit_va.csv", "r").readlines():
+    for line in open("allreddit_va.csv", "r").readlines():
         if line[-1] == "\n":
             line = line[:-1]
         data = line.split(";")
@@ -32,16 +28,6 @@ def load_real_vectors():
 
 
 
-def load_id_database():
-    titles = ["man goes fishing" if i % 2 else "man plays soccer" for i in range(6)]
-    subreddit = "outdoor"
-    upvote_ratios = [10/(4/(i % 2+1)) for i in range(6)]
-    scores = [10**i for i in range(6)]
-    selftexts = ["bla"+str(i) for i in range(5)] + ["i love soccer and fishing"]
-    comments = [["comment"+str(i) for i in range(j+1)] for j in range(6)]
-    posts = [[titles[i], subreddit, upvote_ratios[i], scores[i], selftexts[i], comments[i]] for i in range(6)]
-    DB = {"a"+str(i) : posts[i] for i in range(6)}
-    return DB
 
 POSTDATABASE = load_real_vectors()
 IDDATABASE = db_load()[0]
@@ -116,21 +102,40 @@ def best_comment(expected_comment_vector, cvecs, comments, n):
     res = lfunc(newcos, cvecs)[:,0,0]
     return itemgetter(*(find_n_max_inds(res, n).tolist()))(comments)
 
-def get_eligible_responses(post_comment_pairs, embeddingfunction):
+FALSECOUNTER = 0
+def get_eligible_responses(post_comment_pairs, embeddingfunction, n):
+    global FALSECOUNTER
     weights = []
     pvecs = []
     cvecs = []
     comments = []
+    count = 0
     for pcp in post_comment_pairs:
         post = pcp[0]
         pvec = embeddingfunction(prep(post[1], verbose=False))
-        if not len(pcp[1]):
-            pvecs.append(pvec)
-            cvecs.append(embeddingfunction(prep("", verbose=False)))
-            comments.append("")
-            weights.append(1)
+        continues = []
+        try:
+            if not pcp[1]:
+                FALSECOUNTER += 1
+                continue
+            else:
+                for i, c in enumerate(pcp[1]):
+                    try:
+                        pcp[1][i][1]
+                    except:
+                        continues.append(i)
+                        FALSECOUNTER += 1
+                        continue
+        except:
+            print(pcp)
+            print("wtf")
+            raise ValueError()
 
-        for comment in pcp[1]:
+        for i, comment in enumerate(pcp[1]):
+            if i in continues:
+                continue
+            if not comment:
+                continue
             try:
                 pvecs.append(pvec)
                 weights.append(weightfunc(post[0], comment[0]))
@@ -138,34 +143,49 @@ def get_eligible_responses(post_comment_pairs, embeddingfunction):
                 cvecs.append(cvec)
                 comments.append(remove_special(comment[1]))
             except:
-                print(pcp)
-                raise ValueError("string index out of range")
+                print("pcp", pcp)
+                print("\n\n\n\n\n\n\n\n")
+                print("pcp1", pcp[1])
+                print("\n\n\n\n\n\n\n\n")
+                print("comment", comment)
+                raise ValueError("actually mistook")
+        count += 1
+        if count == n:
+            break
+
+            # print(pcp)
+            # print()
     wvec = np.array(weights)
     pvecs = np.array(pvecs)
     cvecs = np.array(cvecs)
     distances = difference_vector(pvecs, cvecs)
-    print(distances.shape, wvec.shape)
     answerdistance = distances * wvec[:, np.newaxis]
+    answerdistance = np.sum(distances * wvec[:, np.newaxis], axis=0)
+
+    print(answerdistance.shape)
     # print("wvec", wvec.shape)
     # print("distances", distances.shape)
     # print("answer distances", answerdistance.shape)
     return cvecs, comments, answerdistance
 
 def get_best_response(query, embeddingfunction, nposts=5):
+    pnposts = nposts*30
     prep_query = eval(embeddingfunction)(prep(query, verbose=False))
     if embeddingfunction == "additive":
-        res_ids = best_post_additive(prep_query, nposts)
+        res_ids = best_post_additive(prep_query, pnposts)
     elif embeddingfunction == "multiplicative":
-        res_ids = best_post_multiplicative(prep_query, nposts)
+        res_ids = best_post_multiplicative(prep_query, pnposts)
     else:
         raise ValueError("no valid embedding function")
     if isinstance(res_ids, str):
         res_ids = [res_ids]
     post_comment_pairs = get_pcp(res_ids)
-    cvecs, comments, answerdistance = get_eligible_responses(post_comment_pairs, eval(embeddingfunction))
+    cvecs, comments, answerdistance = get_eligible_responses(post_comment_pairs, eval(embeddingfunction), nposts)
     expected_comment_vector = prep_query + answerdistance
     # lprint(comments)
-    return best_comment(expected_comment_vector, cvecs, comments, nposts)
+    print("exp comment", expected_comment_vector.shape)
+    print(FALSECOUNTER)
+    return best_comment(expected_comment_vector, cvecs, comments, 1)
 
 def get_pcp(ids):
     pcps = []

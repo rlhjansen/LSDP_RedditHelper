@@ -19,10 +19,10 @@ from general_easyness import lprint, minput, vec_to_writeformat, writeformat_to_
 from prepare_string import prep, additive, multiplicative
 
 
-DB_FILE = "reddit_db.json"
-VA_FILE = "reddit_va.csv"
+DB_FILE = "allreddit_db.json"
+VA_FILE = "allreddit_va.csv"
 
-SUBREDDIT = ""
+SUBREDDIT = "all"
 LIMIT = 100
 T = "all"
 
