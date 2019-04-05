@@ -230,10 +230,7 @@ def get(postID):
 
 if __name__ == '__main__':
     DB, INDEX = db_load()
-    if DB:
-        VECTORS = vectors_load()
     print()
-
     print("Latest post =", INDEX)
     done = False
     while not done:
@@ -242,3 +239,5 @@ if __name__ == '__main__':
         print(" Saving...", end="", flush=True)
         db_store()
         print(" Done\tLatest post =", INDEX)
+    if DB:
+        VECTORS = vectors_load()
